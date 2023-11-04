@@ -16,45 +16,38 @@ r.html.render()
 
 # Extracting ASINS Section
 
-'''
 # Find all product links on the page
 product_links = r.html.find('.s-underline-link-text')
 
-# Extract ASINs from the links
-asins = []
+# Extract ASINs from the links and store them in a set to eliminate duplicates
+asins = set()
 for link in product_links:
-    href = link.attrs['href']
+    product_url = link.attrs['href']
     try:
-        asin = href.split('/dp/')[1].split('/')[0]
-        asins.append(asin)
+        asin = product_url.split('/dp/')[1].split('/')[0]
+        asins.add(asin)
     except IndexError:
+        # Handle the error and continue the loop
         pass
-
-# Print the ASINs
-for asin in asins:
-    print(asin)
-'''
 
 # Product Details Section
 
-'''
-
 for asin in asins:
-    r = s.get(f'https://www.amazon.com/dp/{asin}?th=1')
+    r = session.get(f'https://www.amazon.com/dp/{asin}?th=1')
 
     r.html.render(sleep = 1)
 
     price = format(float(r.html.find('.a-price-whole')[0].text), '.2f').strip()
     title = r.html.find('#productTitle')[0].text.strip()
-    asin = asin
     date = datetime.datetime.today()
+    brand = title.split(' ')[0]
 
-    print(asin)
-    print(title)
-    print(price)
-    print(date)
+    print('ASIN:', asin)
+    print('Brand:', brand)
+    print('Title:', title.encode('utf-8', 'ignore').decode('utf-8'))
+    print('Price:', price)
+    print('Date:', date)
     print('\n')
-'''
 
 
 # Product Reviews Section
