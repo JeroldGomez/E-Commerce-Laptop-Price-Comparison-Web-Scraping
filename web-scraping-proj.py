@@ -3,76 +3,51 @@ import datetime
 import pandas as pd
 
 
-# HTML session
+
 session = HTMLSession()
 
 # Amazon search results URL
 url = 'https://www.amazon.com/s?k=laptop&ref=nb_sb_noss_2'
 
-# GET request to the URL
 r = session.get(url)
-
-# Parse the page content
 r.html.render()
-
-'''
-# Extracting ASINS Section
 
 # Find all product links on the page
 product_links = r.html.find('.s-underline-link-text')
 
-# Extract ASINs from the links and store them in a set to eliminate duplicates
+# Extract ASINs
 asins = set()
 for link in product_links:
     product_url = link.attrs['href']
     try:
         asin = product_url.split('/dp/')[1].split('/')[0]
         asins.add(asin)
+
+        # Product Details Section
+        asins_list = []
+        brands_list = []
+        titles_list = []
+        prices_list = []
+        dates_list = []
+
+        for asin in asins:
+            r = session.get(f'https://www.amazon.com/dp/{asin}?th=1')
+
+            r.html.render(sleep = 1)
+
+            price = format(float(r.html.find('.a-price-whole')[0].text), '.2f').strip()
+            title = r.html.find('#productTitle')[0].text.strip()
+            date = datetime.datetime.today()
+            brand = title.split(' ')[0]
+
+            asins_list.append(asin)
+            brands_list.append(brand)
+            titles_list.append(title.encode('utf-8', 'ignore').decode('utf-8'))
+            prices_list.append(price)
+            dates_list.append(date)
+
     except IndexError:
-        # Handle the error and continue the loop
         pass
-'''
-
-# Find all product links on the page using a class selector
-product_links = r.html.find('.s-underline-link-text')
-
-# Extract ASINs from the links
-asins = set()
-for i in range(10):  # Loop 5 times
-    if i < len(product_links):
-        link = product_links[i]
-        product_url = link.attrs['href']
-        try:
-            asin = product_url.split('/dp/')[1].split('/')[0]
-            asins.add(asin)
-        except IndexError:
-            # Handle the error and continue the loop
-            pass
-
-
-# Product Details Section
-
-asins_list = []
-brands_list = []
-titles_list = []
-prices_list = []
-dates_list = []
-
-for asin in asins:
-    r = session.get(f'https://www.amazon.com/dp/{asin}?th=1')
-
-    r.html.render(sleep = 1)
-
-    price = format(float(r.html.find('.a-price-whole')[0].text), '.2f').strip()
-    title = r.html.find('#productTitle')[0].text.strip()
-    date = datetime.datetime.today()
-    brand = title.split(' ')[0]
-
-    asins_list.append(asin)
-    brands_list.append(brand)
-    titles_list.append(title.encode('utf-8', 'ignore').decode('utf-8'))
-    prices_list.append(price)
-    dates_list.append(date)
 
 data = {
     'ASIN': asins_list,
@@ -81,8 +56,9 @@ data = {
     'Price': prices_list,
     'Date': dates_list
 }
+
 df = pd.DataFrame(data)
-print(df)
+
 
 # Product Reviews Section
 
