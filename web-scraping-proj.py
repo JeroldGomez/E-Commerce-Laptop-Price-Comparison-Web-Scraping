@@ -1,5 +1,6 @@
 from requests_html import HTMLSession
 import datetime
+import pandas as pd
 
 
 # HTML session
@@ -14,6 +15,7 @@ r = session.get(url)
 # Parse the page content
 r.html.render()
 
+'''
 # Extracting ASINS Section
 
 # Find all product links on the page
@@ -29,8 +31,32 @@ for link in product_links:
     except IndexError:
         # Handle the error and continue the loop
         pass
+'''
+
+# Find all product links on the page using a class selector
+product_links = r.html.find('.s-underline-link-text')
+
+# Extract ASINs from the links
+asins = set()
+for i in range(10):  # Loop 5 times
+    if i < len(product_links):
+        link = product_links[i]
+        product_url = link.attrs['href']
+        try:
+            asin = product_url.split('/dp/')[1].split('/')[0]
+            asins.add(asin)
+        except IndexError:
+            # Handle the error and continue the loop
+            pass
+
 
 # Product Details Section
+
+asins_list = []
+brands_list = []
+titles_list = []
+prices_list = []
+dates_list = []
 
 for asin in asins:
     r = session.get(f'https://www.amazon.com/dp/{asin}?th=1')
@@ -42,13 +68,21 @@ for asin in asins:
     date = datetime.datetime.today()
     brand = title.split(' ')[0]
 
-    print('ASIN:', asin)
-    print('Brand:', brand)
-    print('Title:', title.encode('utf-8', 'ignore').decode('utf-8'))
-    print('Price:', price)
-    print('Date:', date)
-    print('\n')
+    asins_list.append(asin)
+    brands_list.append(brand)
+    titles_list.append(title.encode('utf-8', 'ignore').decode('utf-8'))
+    prices_list.append(price)
+    dates_list.append(date)
 
+data = {
+    'ASIN': asins_list,
+    'Brand': brands_list,
+    'Title': titles_list,
+    'Price': prices_list,
+    'Date': dates_list
+}
+df = pd.DataFrame(data)
+print(df)
 
 # Product Reviews Section
 
