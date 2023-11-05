@@ -2,8 +2,6 @@ from requests_html import HTMLSession
 import datetime
 import pandas as pd
 
-
-
 session = HTMLSession()
 
 # Amazon search results URL
@@ -19,37 +17,42 @@ product_links = r.html.find('.s-underline-link-text')
 asins = set()
 for link in product_links:
     product_url = link.attrs['href']
+    full_product_url = 'https://www.amazon.com' + product_url
     try:
-        asin = product_url.split('/dp/')[1].split('/')[0]
+        asin = full_product_url.split('/dp/')[1].split('/')[0]
         asins.add(asin)
-
-        # Product Details Section
-        asins_list = []
-        brands_list = []
-        titles_list = []
-        prices_list = []
-        dates_list = []
-
-        for asin in asins:
-            r = session.get(f'https://www.amazon.com/dp/{asin}?th=1')
-
-            r.html.render(sleep = 1)
-
-            price = format(float(r.html.find('.a-price-whole')[0].text), '.2f').strip()
-            title = r.html.find('#productTitle')[0].text.strip()
-            date = datetime.datetime.today()
-            brand = title.split(' ')[0]
-
-            asins_list.append(asin)
-            brands_list.append(brand)
-            titles_list.append(title.encode('utf-8', 'ignore').decode('utf-8'))
-            prices_list.append(price)
-            dates_list.append(date)
-
     except IndexError:
         pass
 
+# Product Details Section
+
+websites_list = []
+asins_list = []
+brands_list = []
+titles_list = []
+prices_list = []
+dates_list = []
+
+for asin in asins:
+    r = session.get(f'https://www.amazon.com/dp/{asin}?th=1')
+
+    r.html.render(sleep = 1)
+
+    price = format(float(r.html.find('.a-price-whole')[0].text), '.2f').strip()
+    title = r.html.find('#productTitle')[0].text.strip()
+    date = datetime.datetime.today()
+    brand = title.split(' ')[0]
+    website = full_product_url.split('www.')[1].split('.com/')[0]
+
+    websites_list.append(website)
+    asins_list.append(asin)
+    brands_list.append(brand)
+    titles_list.append(title.encode('utf-8', 'ignore').decode('utf-8'))
+    prices_list.append(price)
+    dates_list.append(date)
+
 data = {
+    'Website': websites_list,
     'ASIN': asins_list,
     'Brand': brands_list,
     'Title': titles_list,
